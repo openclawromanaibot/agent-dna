@@ -2,62 +2,71 @@
 
 ## Purpose
 
-Maintain reviewable L0–L2 instruction DNA for OpenClaw (Windows) and Hermes (Debian) in one public repository. A shared L0 correction is authored once and becomes available to both agents after each host updates its local checkout.
+Maintain reviewed L0–L2 instructions for OpenClaw (Windows) and Hermes (Debian) in a public repository. Delivery of new files does not by itself prove that an agent loaded or obeyed them.
 
 ## Repository layout
 
-- `L0-core.md`: shared root principles, safety constraints, and routing to L1.
-- `openclaw/L0-local.md`: Windows-specific routing and execution constraints.
-- `hermes/L0-local.md`: Debian-specific routing and execution constraints.
-- `common/instructions/*.md`: shared L1 class indexes and L2 skills.
+- `L0-core.md`: shared root principles and routing.
+- `openclaw/L0-local.md`: Windows-specific root instructions.
+- `hermes/L0-local.md`: Debian-specific root instructions.
+- `common/instructions/*.md`: shared L1 indexes and L2 procedures.
 - `openclaw/instructions/*.md`: OpenClaw-specific L1/L2.
 - `hermes/instructions/*.md`: Hermes-specific L1/L2.
 
-The combined byte size of `L0-core.md` and each agent's `L0-local.md` must not exceed 3072 bytes. Keep L0 small: references and non-negotiable rules, not full procedures. Each L1 index maps task triggers to relevant L2 files. Read only the matched L2 file.
+For each host, count UTF-8 bytes in the *contents* of `L0-core.md` plus `<host>/L0-local.md`; the sum must be at most 3072 bytes. L0 routes to relevant L1 indexes; L1 selects only the L2 procedures matching a task.
 
-## Trust and ownership
+## Trust, permissions, and boundaries
 
-The public repository must contain no private host values, personal identifiers, credentials, runtime configuration, or local memory. Host-private L3, secrets, and shared memory remain outside this repository. Use placeholders in examples.
+Never publish secrets, personal identifiers, host-specific private values, runtime configuration, or local memory. Keep private L3 and credentials outside this repository.
 
-Agents may propose changes only on dedicated branches through pull requests targeting `dev`. A human code owner reviews and merges. Agents never push or merge into `dev`, and never directly edit active host DNA during migration. Host changes are requested in Markdown change requests for a human to apply.
+Agents with explicitly authorized GitHub write access may publish changes to their own feature branches and open PRs targeting `dev`. Agents without that access prepare a local diff or Markdown change request; a trusted human or authorized publisher opens the PR. No agent directly pushes to `dev` or merges a PR. A human code owner reviews and merges.
 
-The protected `dev` branch requires the `gate` status check and code-owner approval. The gate scans each commit and the final tree; do not attempt to hide a rejected line by removing it in a later commit.
+The protected `dev` branch requires `gate` and code-owner approval. The gate checks every commit as well as the final tree.
 
-## Phase 1 — manual pull
+Each host keeps the expected Git host, repository owner/name, and allowed remote transport in **host-private configuration**. Before fetching, compare the configured identity against the actual remote and reject mismatches or unapproved redirects. Do not embed credentials in URLs. Never publish the private trust configuration.
 
-Trigger: a human explicitly asks each agent to update DNA.
+## Deployment paths and activation
 
-1. Verify the expected checkout and remote identity using the host's trusted configuration. Never embed credentials in remote URLs.
-2. Fetch `dev` without modifying the currently active instruction files.
-3. Resolve the remote `dev` commit and record its immutable commit ID.
-4. Inspect local status and compare the current local DNA commit with the fetched commit. If the checkout has local edits, diverged history, missing expected files, or an untrusted remote, stop and report; never reset, stash, overwrite, or force.
-5. Update the local DNA checkout only via a fast-forward to the pinned commit. Confirm the resulting commit ID matches the pinned target.
-6. Verify the expected L0 and L1 paths and the combined L0 byte budget. If verification fails, stop and report the failed state; do not claim success.
-7. Report the old and new commit IDs, changed files, and: "DNA updated, active from next session." This message means files on disk were updated; it does not claim that the current agent session reloaded instructions.
+- **Staging checkout**: isolated, non-active Git working directory used for fetch, inspection, and validation.
+- **Active loader path**: the instruction source actually read by the agent at session startup, managed separately from staging.
 
-The host integration for loading L0/L1/L2 is a separate, human-approved migration step. Until the loader is verified, a successful fetch alone does not prove the agent is using the new DNA.
+A staging fast-forward must never change the active loader path. Activation is a separate, human-approved host integration operation, with its own verification and rollback procedure. Until that integration is implemented and tested, the MVP only stages a verified revision; it must not report that active instructions changed.
+
+## Phase 1 — manual staging update
+
+Trigger: a human explicitly requests an update on each host.
+
+1. Verify the staging checkout, host-private trusted remote identity, and absence of uncommitted changes. Stop on unexpected files, local drift, or untrusted remote.
+2. Fetch `dev` into staging without modifying active loader files. Pin the fetched commit ID (`target SHA`); record the current staging commit (`old SHA`).
+3. Verify that `old SHA` is an ancestor of `target SHA` and that the target is reachable from the trusted fetched `dev`. Otherwise stop: no rebase, reset, force, or automatic conflict resolution.
+4. **Before changing the staging checkout**, inspect the pinned target tree in an isolated temporary worktree or equivalent read-only Git tree inspection. Validate expected L0 and L1 paths, file types, and both per-host UTF-8 L0 byte totals. Fail closed on missing or malformed content.
+5. Only after successful target-tree validation, fast-forward the staging checkout to exactly `target SHA`. Confirm its HEAD matches the pinned SHA. If this operation fails, report failure; do not touch the active loader path.
+6. Report old SHA, target SHA, changed files, staging validation results, and the explicit state: "DNA staged at <target SHA>; active loader unchanged."
+
+The active loader remains on its previous approved revision throughout this staging procedure, including any validation or update failure. A verified host integration may later activate a pinned staged revision for **the next session**, after separate approval and checks. Never claim the current session has hot-reloaded instructions.
 
 ## Phase 1 acceptance criteria
 
-- Both hosts can fetch and fast-forward from `dev` independently.
-- Both report pinned old/new commit IDs and changed files.
-- Local drift or divergent history stops without modifying active files.
-- Private host files and runtime secrets are untouched.
-- A new session reads the updated DNA; the existing session is not represented as reloaded.
-- Failed updates produce an explicit error, never a success report.
+- Both hosts independently stage the same reviewed `dev` revision and report pinned commit IDs.
+- A clean ancestor relationship is required; divergent or dirty staging state stops safely.
+- Invalid target-tree content is rejected **before** staging checkout changes.
+- Failures leave the active loader revision unchanged.
+- Secrets, host configuration, and local memory remain untouched.
+- Once the separately approved loader integration exists, a new session demonstrably reads the activated revision; staging alone is not accepted as proof of activation.
+- Every failure has an explicit status, never a success message.
 
-## Phase 2 — daily pull
+## Phase 2 — daily staging update
 
-Enable only after Phase 1 passes on both hosts and the owner approves the schedule. Run the same verified procedure daily; do not add a second updater or a background agent. On drift, missing files, failed fetch, or failed verification, stop and report for human intervention. No automatic conflict resolution, resets, or fallback to unreviewed branches.
+Enable only after Phase 1 is validated on both hosts and a human approves the schedule. Reuse exactly the same pinned-target validation and staging procedure. Do not introduce another updater, silent fallback, automatic activation, or conflict resolution. Stop and report any drift or failure.
 
 ## Out of scope
 
-Automatic host DNA edits, live hot-reloading, merge automation, credential distribution, private memory synchronization, and the future heavy updater design are excluded from this MVP.
+Direct edits to active host DNA, live hot-reloading, automated merges, automatic activation, secret distribution, private memory synchronization, and the separate behavioral error-correction workflow are not part of this delivery MVP.
 
 ## Rollout sequence
 
-1. Human reviews this specification.
-2. Agents prepare separate migration change requests for existing L0/L1 content, without host-private values.
-3. Human reviews and merges the DNA content PRs.
-4. Human applies host loader and manual-pull changes.
-5. Validate Phase 1 on both hosts before approving Phase 2.
+1. Human reviews and approves this specification.
+2. Agents prepare migration change requests for existing L0/L1 content without private host values.
+3. Authorized contributors publish content PRs; human code owner reviews and merges.
+4. Human separately approves and implements host staging and loader integration.
+5. Validate Phase 1 on both hosts, including next-session loader behavior, before considering Phase 2.
