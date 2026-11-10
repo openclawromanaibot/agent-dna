@@ -11,12 +11,12 @@ spec.loader.exec_module(gate)
 
 class TestCheckPath(unittest.TestCase):
     def test_allowed(self):
-        for p in ("L0-core.md", "hermes/L0-local.md", "common/instructions/secrets/index.md",
+        for p in ("L0-core.md", "broadcast.md", "hermes/L0-local.md", "common/instructions/secrets/index.md",
                   "common/tasks/export-dna.md", "common/tasks/nested/check.md"):
             self.assertIsNone(gate.checkPath(p), p)
 
     def test_rejected(self):
-        for p in ("", "data/profile.json", "../x.md", "common/instructions/../x.md",
+        for p in ("", "broadcast.txt", "broadcast/other.md", "data/profile.json", "../x.md", "common/instructions/../x.md",
                   "a//b.md", "common/instructions/.hid.md", "hermes/instructions/run.sh",
                   "screenshot.png", "common/instructions/a b.md", "L0-core.md\n",
                   "common/tasks/.hidden.md", "common/tasks/run.sh",
