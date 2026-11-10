@@ -17,6 +17,7 @@ ALLOWED_PATHS = [
     r"L0-core\.md",
     r"(?:openclaw|hermes)/L0-local\.md",
     r"(?:common|openclaw|hermes)/instructions/[A-Za-z0-9._/-]+\.md",
+    r"common/tasks/[A-Za-z0-9._/-]+\.md",
     r"README\.md",
     r"\.gitignore",
     r"\.github/CODEOWNERS",
