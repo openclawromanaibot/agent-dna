@@ -1,0 +1,29 @@
+name: gate
+on:
+  pull_request:
+    branches: [dev]
+permissions:
+  contents: read
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Run gate (script taken from the base branch, not from the PR)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git cat-file -e "$BASE_SHA:.github/scripts/gate.py" 2>/dev/null; then
+            git show "$BASE_SHA:.github/scripts/gate.py" > /tmp/gate.py
+          else
+            cp .github/scripts/gate.py /tmp/gate.py   # bootstrap: first PR only
+          fi
+          python3 /tmp/gate.py
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests
