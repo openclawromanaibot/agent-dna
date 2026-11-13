@@ -19,9 +19,9 @@ class TestRuntimeConstitution(unittest.TestCase):
     def test_laws_and_meta_laws_are_present_once(self):
         text = RUNTIME.read_text(encoding="utf-8")
         for law in range(1, 8):
-            self.assertEqual(len(re.findall(rf"^\\*\\*F{law} ", text, re.M)), 1)
+            self.assertEqual(len(re.findall(rf"^\*\*F{law} ", text, re.M)), 1)
         for meta in ("M1", "M1b", "M2", "M3"):
-            self.assertEqual(len(re.findall(rf"^\\*\\*{meta} ", text, re.M)), 1)
+            self.assertEqual(len(re.findall(rf"^\*\*{meta} ", text, re.M)), 1)
 
     def test_input_trust_and_fail_closed_rules(self):
         text = RUNTIME.read_text(encoding="utf-8")
