@@ -19,7 +19,7 @@
 - Work-class rule: `instructions/<class>/index.md`.
 - Commands or ordered steps: the appropriate skill and its normal editing mechanism.
 - Facts, IDs, dates and incidents: local learnings or shared memory.
-- Principle, red line or routing change: propose exact wording to the owner before changing cloud DNA.
+- Principle, red line or routing change: propose exact wording to the user before changing cloud DNA.
 - If no class fits, use `instructions/ops/index.md` or ask.
 
 ## Related
