@@ -8,6 +8,14 @@ agent.
 Read [the layer contract](common/instructions/dna-layer-contract.md) before
 editing or deploying DNA.
 
+## Active universal L0
+
+- **Runtime constitution v2.1:** [`common/instructions/universal-laws.md`](common/instructions/universal-laws.md) is the only universal L0 text included by the layered root composer.
+- **Design rationale:** [`common/instructions/L0-rationale.md`](common/instructions/L0-rationale.md) contains review decisions, violation examples and migration constraints. It is never injected into every agent turn.
+- The published commit and verified blob hashes identify source content; the loader must record the exact activated revision. A merge does not prove that any running agent has loaded it.
+- New binding L1/L2 rules must declare a law or delegated authority; private profiles and memory are data rather than separate instruction authorities.
+
+
 ## Target layering
 
 | Layer | Owner | Contents |
