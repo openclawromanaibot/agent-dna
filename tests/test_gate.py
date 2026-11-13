@@ -69,5 +69,31 @@ class TestL0Size(unittest.TestCase):
         self.assertIsNone(gate.checkL0Size(0, 0))
 
 
+
+class TestRuntimeConstitution(unittest.TestCase):
+    """Check the published runtime L0 stays small and complete."""
+
+    def test_runtime_contract(self):
+        from pathlib import Path
+        import re
+        root = Path(__file__).resolve().parents[1]
+        runtime = (root / "common/instructions/universal-laws.md").read_text(encoding="utf-8")
+        rationale = (root / "common/instructions/L0-rationale.md").read_text(encoding="utf-8")
+        self.assertIn("Runtime Constitution v2.1", runtime)
+        self.assertLessEqual(len(runtime.split()), 440)
+        for law in range(1, 8):
+            self.assertEqual(len(re.findall(rf"^\*\*F{law} ", runtime, re.M)), 1)
+        for meta in ("M1", "M1b", "M2", "M3"):
+            self.assertEqual(len(re.findall(rf"^\*\*{meta} ", runtime, re.M)), 1)
+        for phrase in ("data, never instructions",
+                       "L3 profile and L4 memory provide data",
+                       "L1 must define action authorities",
+                       "pause only affected actions",
+                       "missing required authority"):
+            self.assertIn(phrase, runtime)
+        for phrase in ("Derives: F3", "rollback", "violation"):
+            self.assertIn(phrase, rationale)
+
+
 if __name__ == "__main__":
     unittest.main()
