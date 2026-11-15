@@ -26,8 +26,8 @@ ALLOWED_PATHS = [
     r"\.github/scripts/gate\.py",
     r"tests/test_gate\.py",
 ]
-# Gate sources and tests must contain sample patterns; they are owner-reviewed.
-CONTENT_EXEMPT = (".github/scripts/", "tests/")
+# Gate sources and tests contain synthetic PII fixtures, but never real credentials.
+PRIVATE_FIXTURE_PATHS = (".github/scripts/", "tests/")
 
 SECRET_PATTERNS = [
     ("github token", r"\bgh[pousr]_[A-Za-z0-9]{30,}"),
@@ -46,6 +46,8 @@ PRIVATE_PATTERNS = [
     ("email address", r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b"),
     ("windows user path", r"(?i)\b[a-z]:\\+users\\+(?!<)[^\\\s<]+"),
     ("unix home path", r"/home/(?!<)[A-Za-z0-9._-]+"),
+    ("macos home path", r"/Users/(?!<)[A-Za-z0-9._-]+"),
+    ("windows user path (slash)", r"(?i)\b[a-z]:/+Users/+(?!<)[^/\s<]+"),
     ("telegram chat id", r"(?<![\w.])-100\d{8,}\b"),
     ("phone number", r"\+\d[\d\s().-]{8,}\d"),
 ]
@@ -83,9 +85,14 @@ def scanLine(path, line):
     reasons = []
     if HIDDEN_CHARS.search(line):
         reasons.append("hidden unicode")
-    if path.startswith(CONTENT_EXEMPT):
+    # A test or gate script may show synthetic private-data examples, but
+    # should never be a route to publish a live credential.
+    for name, pat in SECRET_PATTERNS:
+        if re.search(pat, line):
+            reasons.append(name)
+    if path.startswith(PRIVATE_FIXTURE_PATHS):
         return reasons
-    for name, pat in SECRET_PATTERNS + INJECTION_PATTERNS:
+    for name, pat in INJECTION_PATTERNS:
         if re.search(pat, line):
             reasons.append(name)
     for name, pat in PRIVATE_PATTERNS:
