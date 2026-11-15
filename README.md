@@ -49,6 +49,17 @@ Never commit personal data, identifiers, secrets, keys, tokens, passwords,
 addresses, host paths, individual preferences or private profile/memory records.
 All instructions in this public repository must be in English.
 
+Keep real machine paths, host/user names, account addresses and personal profile
+values in host-local configuration, outside this repository. Public instructions
+may reference symbolic configuration keys, not their real values. Never publish
+credential values, including in tests or security-gate scripts; synthetic
+examples in tests are not a blanket exemption from secret scanning.
+
+For future commits, contributors should review their local Git author name
+and email settings and choose an appropriate GitHub noreply address if they do
+not want a personal email in public commit metadata. This does not remove
+existing historical metadata, and does not conceal the GitHub repository owner.
+
 ## Change flow
 
 1. Create an owned feature branch from fresh `dev`, never write to `dev` directly.
